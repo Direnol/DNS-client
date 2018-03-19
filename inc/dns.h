@@ -1,0 +1,4 @@
+#ifndef DNS_CLIENT_DNS_H
+#define DNS_CLIENT_DNS_H
+
+#endif //DNS_CLIENT_DNS_H
