@@ -28,6 +28,7 @@ struct iovec *pack_dns(dns_t *dns, query_t *query, size_t n)
 
 char *getipbyname(char *name)
 {
+    void *ret = NULL;
     srand((unsigned int) time(NULL));
     int sock = 0;
     ERR(init_sock(&sock), "Init socket");
@@ -50,13 +51,33 @@ char *getipbyname(char *name)
 
     struct iovec *iov = pack_dns(&dns, &query, count_query);
     ERR(send_pack(sock, iov, count_query + 1, &addr), "Send pack");
-    recv_pack();
 
+    uint8_t buf[UINT16_MAX];
+    size_t n = UINT16_MAX;
+    if (recv_pack(sock, buf, (struct sockaddr *) &addr, &n)) {
+        perror("Fail recv pack");
+        ret = NULL;
+        goto fail;
+    }
+
+    dns_t *ans = (dns_t *) buf;
+    count_query = ntohs(ans->quests);
+    char *query_start = (char *) (buf + sizeof(dns));
+    printf("Questions %d ip\n", count_query);
+    int size_query = 0;
+    for (int i = 0; i < count_query; ++i) {
+        int size_q = read_query(query_start, &query);
+        printf("%s len:[%d] type:[%d] class:[%d]\n", query.name, size_q, query.type, query.class);
+        printf("Get %d ip\n", ntohs(ans->answer_rrs));
+        size_query += size_q;
+    }
+
+    fail:
     for (int i = 0; i < count_query + 1; ++i) {
         free(iov[i].iov_base);
     }
     free(iov);
-    return NULL;
+    return ret;
 }
 
 void ChangetoDnsNameFormat(char *dns, char *_host)
@@ -102,4 +123,16 @@ void get_dns_servers()
             //p now is the dns ip
         }
     }
+}
+
+int read_query(char *buf, query_t *query)
+{
+    int size = 0;
+    for (; buf[size] != '\0'; ++size) {
+        if (buf[size] < 'a') buf[size] = '.';
+    }
+    query->name = buf + 1;
+    query->type = ntohs(*(uint16_t *)(buf + size + 1));
+    query->class = ntohs(*((uint16_t*) (buf + size + 1 + sizeof(uint16_t))));
+    return size + 2 * sizeof(uint16_t) + 1;
 }

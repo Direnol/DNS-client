@@ -45,6 +45,8 @@ void ChangetoDnsNameFormat(char *dns, char *host);
 
 void get_dns_servers();
 
+int read_query(char *buf, query_t *query);
+
 char *getipbyname(char *name);
 
 #endif //DNS_CLIENT_DNS_H
