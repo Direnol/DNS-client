@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <inttypes.h>
 
-#include <socket.h>
+#include <sys/socket.h>
 #include <linux/ioctl.h>
 #include <linux/if_ether.h>
 #include <net/if.h>
@@ -23,7 +23,8 @@ int init_sock(int *fd);
 /* 0 - success, 1 - timeout */
 int recv_pack(uint8_t *pack, struct sockaddr *sock, size_t *nbytes);
 
-int send_pack(uint8_t *pack, char *sip, char *dip);
+int send_pack(int fd, struct iovec *iov, size_t n, struct sockaddr_in * addr);
 
+void *memdup(void *mem, size_t n);
 
 #endif //DNS_CLIENT_SOCKET_H
