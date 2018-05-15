@@ -38,6 +38,18 @@ struct _query {
 };
 typedef struct _query query_t;
 
+#pragma pack(push, 1))
+struct _response_dns {
+    uint16_t name_ptr;
+    uint16_t type;
+    uint16_t class;
+    uint32_t ttl;
+    uint16_t data_len;
+    struct in_addr addr;
+};
+#pragma pack(pop)
+typedef struct _response_dns resp_t;
+
 struct iovec * pack_dns(dns_t *dns, query_t *query, size_t n);
 
 // This will convert www.google.com to 3www6google3com
@@ -47,6 +59,6 @@ void get_dns_servers();
 
 int read_query(char *buf, query_t *query);
 
-char *getipbyname(char *name);
+char ** getipbyname(char *name);
 
 #endif //DNS_CLIENT_DNS_H

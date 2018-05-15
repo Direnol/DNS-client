@@ -30,7 +30,7 @@ void *memdup(void *mem, size_t n)
     return new_mem;
 }
 
-int recv_pack(int fd, uint8_t *pack, struct sockaddr *sock, size_t *nbytes)
+int recv_pack(int fd, char *pack, struct sockaddr *sock, size_t *nbytes)
 {
     socklen_t socklen = sizeof(*sock);
     ssize_t count = recvfrom(fd, pack, *nbytes, 0, sock, &socklen);

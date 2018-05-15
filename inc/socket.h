@@ -21,7 +21,7 @@
 int init_sock(int *fd);
 
 /* 0 - success, 1 - timeout */
-int recv_pack(int fd, uint8_t *pack, struct sockaddr *sock, size_t *nbytes);
+int recv_pack(int fd, char *pack, struct sockaddr *sock, size_t *nbytes);
 
 int send_pack(int fd, struct iovec *iov, size_t n, struct sockaddr_in * addr);
 

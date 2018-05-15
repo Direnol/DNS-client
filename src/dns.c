@@ -26,9 +26,9 @@ struct iovec *pack_dns(dns_t *dns, query_t *query, size_t n)
     return iov;
 }
 
-char *getipbyname(char *name)
+char **getipbyname(char *name)
 {
-    void *ret = NULL;
+    void **ret = NULL;
     srand((unsigned int) time(NULL));
     int sock = 0;
     ERR(init_sock(&sock), "Init socket");
@@ -52,7 +52,7 @@ char *getipbyname(char *name)
     struct iovec *iov = pack_dns(&dns, &query, count_query);
     ERR(send_pack(sock, iov, count_query + 1, &addr), "Send pack");
 
-    uint8_t buf[UINT16_MAX];
+    char *buf = calloc(UINT16_MAX, sizeof(char));
     size_t n = UINT16_MAX;
     if (recv_pack(sock, buf, (struct sockaddr *) &addr, &n)) {
         perror("Fail recv pack");
@@ -62,22 +62,31 @@ char *getipbyname(char *name)
 
     dns_t *ans = (dns_t *) buf;
     count_query = ntohs(ans->quests);
-    char *query_start = (char *) (buf + sizeof(dns));
+    char *query_start = (buf + sizeof(dns));
     printf("Questions %d ip\n", count_query);
-    int size_query = 0;
+
+    char *ptr = query_start;
     for (int i = 0; i < count_query; ++i) {
         int size_q = read_query(query_start, &query);
         printf("%s len:[%d] type:[%d] class:[%d]\n", query.name, size_q, query.type, query.class);
         printf("Get %d ip\n", ntohs(ans->answer_rrs));
-        size_query += size_q;
+        ptr += size_q;
     }
+
+    resp_t *resp = (resp_t *) ptr;
+    char **list = calloc(ntohs(ans->answer_rrs) + 1, sizeof(*list));
+    for (int i = 0; i < ntohs(ans->answer_rrs); ++i) {
+      list[i] = strdup(inet_ntoa(resp[i].addr));
+    }
+    ret = (void **) list;
 
     fail:
     for (int i = 0; i < count_query + 1; ++i) {
         free(iov[i].iov_base);
     }
     free(iov);
-    return ret;
+    free(buf);
+    return (char **) ret;
 }
 
 void ChangetoDnsNameFormat(char *dns, char *_host)
@@ -134,5 +143,5 @@ int read_query(char *buf, query_t *query)
     query->name = buf + 1;
     query->type = ntohs(*(uint16_t *)(buf + size + 1));
     query->class = ntohs(*((uint16_t*) (buf + size + 1 + sizeof(uint16_t))));
-    return size + 2 * sizeof(uint16_t) + 1;
+    return (int) (strlen(buf) + 2 * sizeof(uint16_t) + 1);
 }
